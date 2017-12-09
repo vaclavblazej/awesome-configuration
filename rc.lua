@@ -11,8 +11,29 @@ local naughty = require("naughty")
 local menubar = require("menubar")
 local hotkeys_popup = require("awful.hotkeys_popup").widget
 
+local alttab = require("alttab")
+local APW = require("apw/widget")
+local revelation=require("revelation")
+
+-- awesome-wm-widgets: https://github.com/streetturtle/awesome-wm-widgets
+sprtr = wibox.widget.textbox()
+sprtr:set_text(" : ")
+require("awesome-wm-widgets.volumearc-widget.volumearc")
+require("awesome-wm-widgets.batteryarc-widget.batteryarc")
+require("awesome-wm-widgets.brightness-widget.brightness")
+awful.util.spawn_with_shell("nm-applet")
+
+-- Obvious packages
+require("blingbling")
+require("obvious.net")
+require("obvious.keymap_switch")
+require("obvious.clock")
+
 -- Load Debian menu entries
 require("debian.menu")
+
+-- Start revelation
+revelation.init()
 
 -- {{{ Error handling
 -- Check if awesome encountered an error during startup and fell back to
@@ -57,22 +78,22 @@ modkey = "Mod4"
 
 -- Table of layouts to cover with awful.layout.inc, order matters.
 awful.layout.layouts = {
-    awful.layout.suit.floating,
+--    awful.layout.suit.floating,
     awful.layout.suit.tile,
-    awful.layout.suit.tile.left,
+--    awful.layout.suit.tile.left,
     awful.layout.suit.tile.bottom,
-    awful.layout.suit.tile.top,
-    awful.layout.suit.fair,
-    awful.layout.suit.fair.horizontal,
-    awful.layout.suit.spiral,
-    awful.layout.suit.spiral.dwindle,
-    awful.layout.suit.max,
-    awful.layout.suit.max.fullscreen,
-    awful.layout.suit.magnifier,
-    awful.layout.suit.corner.nw,
-    -- awful.layout.suit.corner.ne,
-    -- awful.layout.suit.corner.sw,
-    -- awful.layout.suit.corner.se,
+--    awful.layout.suit.tile.top,
+--    awful.layout.suit.fair,
+--    awful.layout.suit.fair.horizontal,
+--    awful.layout.suit.spiral,
+--    awful.layout.suit.spiral.dwindle,
+--    awful.layout.suit.max,
+--    awful.layout.suit.max.fullscreen,
+--    awful.layout.suit.magnifier
+--    awful.layout.suit.corner.nw,
+--    awful.layout.suit.corner.ne,
+--    awful.layout.suit.corner.sw,
+--    awful.layout.suit.corner.se,
 }
 -- }}}
 
@@ -103,7 +124,8 @@ myawesomemenu = {
 
 mymainmenu = awful.menu({ items = { { "awesome", myawesomemenu, beautiful.awesome_icon },
                                     { "Debian", debian.menu.Debian_menu.Debian },
-                                    { "open terminal", terminal }
+                                    { "open terminal", terminal },
+                                    { "sleep", terminal .. " -e systemctl suspend -i" }
                                   }
                         })
 
@@ -219,6 +241,14 @@ awful.screen.connect_for_each_screen(function(s)
             layout = wibox.layout.fixed.horizontal,
             mykeyboardlayout,
             wibox.widget.systray(),
+            volumearc_widget,
+            sprtr,
+            obvious.keymap_switch(),
+            sprtr,
+            brightness_widget,
+            sprtr,
+            batteryarc_widget,
+            sprtr,
             mytextclock,
             s.mylayoutbox,
         },
@@ -236,28 +266,25 @@ root.buttons(awful.util.table.join(
 
 -- {{{ Key bindings
 globalkeys = awful.util.table.join(
-    awful.key({ modkey,           }, "s",      hotkeys_popup.show_help,
-              {description="show help", group="awesome"}),
-    awful.key({ modkey,           }, "Left",   awful.tag.viewprev,
-              {description = "view previous", group = "tag"}),
-    awful.key({ modkey,           }, "Right",  awful.tag.viewnext,
-              {description = "view next", group = "tag"}),
-    awful.key({ modkey,           }, "Escape", awful.tag.history.restore,
-              {description = "go back", group = "tag"}),
+    awful.key({ modkey, }, "s",      hotkeys_popup.show_help, {description="show help", group="awesome"}),
+    awful.key({ modkey, }, "Left",   awful.tag.viewprev, {description = "view previous", group = "tag"}),
+    awful.key({ modkey, }, "Right",  awful.tag.viewnext, {description = "view next", group = "tag"}),
+    awful.key({ modkey, }, "Escape", awful.tag.history.restore, {description = "go back", group = "tag"}),
 
-    awful.key({ modkey,           }, "j",
+    awful.key({ modkey, }, "e",      revelation),
+    awful.key({ modkey, }, "j",
         function ()
             awful.client.focus.byidx( 1)
         end,
         {description = "focus next by index", group = "client"}
     ),
-    awful.key({ modkey,           }, "k",
+    awful.key({ modkey, }, "k",
         function ()
             awful.client.focus.byidx(-1)
         end,
         {description = "focus previous by index", group = "client"}
     ),
-    awful.key({ modkey,           }, "w", function () mymainmenu:show() end,
+    awful.key({ modkey, }, "w", function () mymainmenu:show() end,
               {description = "show main menu", group = "awesome"}),
 
     -- Layout manipulation
@@ -315,6 +342,18 @@ globalkeys = awful.util.table.join(
                   end
               end,
               {description = "restore minimized", group = "client"}),
+
+    -- Alt-tab to change window
+    awful.key({ "Mod1",           }, "Tab", function () alttab.switch( 1, "Alt_L", "Tab", "ISO_Left_Tab") end ),
+    awful.key({ "Mod1", "Shift"   }, "Tab", function () alttab.switch(-1, "Alt_L", "Tab", "ISO_Left_Tab") end ),
+    -- volume controls
+    awful.key({ }, "XF86AudioRaiseVolume",  APW.Up),
+    awful.key({ }, "XF86AudioLowerVolume",  APW.Down),
+    awful.key({ }, "XF86AudioMute",         APW.ToggleMute),
+    awful.key({ }, "XF86MonBrightnessUp",   function () awful.spawn("light -A 5") end,
+                {description = "increase brightness", group = "custom"}),
+    awful.key({ }, "XF86MonBrightnessDown", function () awful.spawn("light -U 5") end,
+                {description = "decrease brightness", group = "custom"}),
 
     -- Prompt
     awful.key({ modkey },            "r",     function () awful.screen.focused().mypromptbox:run() end,
@@ -470,7 +509,7 @@ awful.rules.rules = {
 
     -- Add titlebars to normal clients and dialogs
     { rule_any = {type = { "normal", "dialog" }
-      }, properties = { titlebars_enabled = true }
+      }, properties = { titlebars_enabled = false }
     },
 
     -- Set Firefox to always map on the tag named "2" on screen 1.
