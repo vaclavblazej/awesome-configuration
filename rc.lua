@@ -22,6 +22,7 @@ require("awesome-wm-widgets.volumearc-widget.volumearc")
 require("awesome-wm-widgets.batteryarc-widget.batteryarc")
 require("awesome-wm-widgets.brightness-widget.brightness")
 awful.util.spawn_with_shell("nm-applet")
+awful.util.spawn_with_shell("redshift-gtk")
 
 -- Obvious packages
 require("blingbling")
@@ -286,6 +287,7 @@ globalkeys = awful.util.table.join(
     ),
     awful.key({ modkey, }, "w", function () mymainmenu:show() end,
               {description = "show main menu", group = "awesome"}),
+    awful.key({ modkey, "Control", "Shift" }, "l", function () awful.spawn("gnome-screensaver-command -l") end, {}),
 
     -- Layout manipulation
     awful.key({ modkey, "Shift"   }, "j", function () awful.client.swap.byidx(  1)    end,
@@ -354,6 +356,10 @@ globalkeys = awful.util.table.join(
                 {description = "increase brightness", group = "custom"}),
     awful.key({ }, "XF86MonBrightnessDown", function () awful.spawn("light -U 5") end,
                 {description = "decrease brightness", group = "custom"}),
+    awful.key({ }, "XF86KbdBrightnessUp",   function () awful.spawn("") end,
+                {description = "increase keyboard backlight", group = "custom"}),
+    awful.key({ }, "XF86KbdBrightnessDown", function () awful.spawn("") end,
+                {description = "decrease keyboard backlight", group = "custom"}),
 
     -- Prompt
     awful.key({ modkey },            "r",     function () awful.screen.focused().mypromptbox:run() end,
